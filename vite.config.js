@@ -1,3 +1,3 @@
 export default {
-    base: '/lecture-3/'
-}
+    base: process.env.REPO_NAME || '/'
+};
