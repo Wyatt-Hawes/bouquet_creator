@@ -1,7 +1,7 @@
 name: Deploy static content to Pages
 on:
   push:
-    branches: [$default-branch]
+    branches: ["main"]
 jobs:
   deploy:
     environment:
