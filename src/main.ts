@@ -1,21 +1,11 @@
 import "./style.css";
 
-document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-  <div>
-    <h1>Hello from Lecture 3</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-  </div>
-`;
+const app: HTMLDivElement = document.querySelector("#app")!;
 
-const element = document.querySelector<HTMLButtonElement>("#counter")!;
+const gameName = "My game";
 
-let counter = 0;
+document.title = gameName;
 
-const setCounter = (count: number) => {
-  counter = count;
-  element.innerHTML = `count is ${counter}`;
-};
-element.addEventListener("click", () => setCounter(counter + 1));
-setCounter(0);
+const header = document.createElement("h1");
+header.innerHTML = gameName;
+app.append(header);
