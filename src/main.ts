@@ -1,73 +1,105 @@
 import "./style.css";
-import { PaintCanvas } from "./classes";
+
+const drawingChanged = new CustomEvent("drawing-changed");
 
 const app: HTMLDivElement = document.querySelector("#app")!;
-
 const gameName = "Wyatt's Sticker Sketchpad";
+const header = document.createElement("h1");
+let lines: { x: number; y: number }[][] = [];
+let currentLine: { x: number; y: number }[] | null = [];
 
 document.title = gameName;
-
-const header = document.createElement("h1");
 header.innerHTML = gameName;
 app.append(header);
 
-const paintCanvas = createCanvas();
+//Create canvas
+const canvas = document.createElement("canvas");
+canvas.id = "canvas";
+canvas.width = 256;
+canvas.height = 256;
+app.append(canvas);
+
+//Get context
+const ctx = canvas.getContext("2d")!;
+ctx.fillStyle = "white";
+ctx.fillRect(0, 0, 256, 256);
+
 const cursor = { active: false, x: 0, y: 0 };
-addCanvasEvents(paintCanvas);
+addCanvasEvents();
 
-//Add clear button
-const clearButton = document.createElement("button");
-clearButton.innerHTML = "clear";
-app.append(document.createElement("br"));
-app.append(clearButton);
+addClearButton();
 
-//Add click functionality
-clearButton.addEventListener("click", () => {
-  clearCanvas(paintCanvas);
-});
-
+//-----------------------
 //-----FUNCTIONS-------//
+//-----------------------
 
-function createCanvas(): PaintCanvas {
-  const canv = document.createElement("canvas");
-  canv.id = "canvas";
-  canv.width = 256;
-  canv.height = 256;
-
-  const canvasCTX = canv.getContext("2d");
-  clearCanvas({ canvas: canv, context: canvasCTX! });
-
-  app.append(canv);
-  return { canvas: canv, context: canvasCTX! };
-}
-
-function addCanvasEvents(pC: PaintCanvas) {
-  pC.canvas.addEventListener("mousedown", (e) => {
+function addCanvasEvents() {
+  canvas.addEventListener("mousedown", (e) => {
     cursor.active = true;
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
+
+    currentLine = [];
+    lines.push(currentLine);
+    //redoLines.splice(0, redoLines.length);
+    currentLine.push({ x: cursor.x, y: cursor.y });
+
+    canvas.dispatchEvent(drawingChanged);
   });
 
-  pC.canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", (e) => {
     if (!cursor.active) {
       return;
     }
-    pC.context.beginPath();
-    pC.context.moveTo(cursor.x, cursor.y);
-    pC.context.lineTo(e.offsetX, e.offsetY);
-    pC.context.stroke();
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
+    currentLine!.push({ x: cursor.x, y: cursor.y });
+
+    canvas.dispatchEvent(drawingChanged);
   });
 
-  pC.canvas.addEventListener("mouseup", () => {
+  canvas.addEventListener("mouseup", () => {
     cursor.active = false;
+    currentLine = null;
+  });
+
+  canvas.addEventListener("drawing-changed", () => {
+    redraw();
   });
 }
 
-function clearCanvas(pC: PaintCanvas) {
-  pC.context.clearRect(0, 0, pC.canvas.width, pC.canvas.height);
-  pC.context.fillStyle = "white";
+function redraw() {
+  clearCanvas();
+  for (const line of lines) {
+    if (line.length > 1) {
+      ctx.beginPath();
+      const { x, y } = line[0];
+      ctx.moveTo(x, y);
+      for (const { x, y } of line) {
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+}
 
-  pC.context.fillRect(0, 0, 256, 256);
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+
+  ctx.fillRect(0, 0, 256, 256);
+}
+
+function addClearButton() {
+  //Add clear button
+  const clearButton = document.createElement("button");
+  clearButton.innerHTML = "clear";
+  app.append(document.createElement("br"));
+  app.append(clearButton);
+
+  //Add click functionality
+  clearButton.addEventListener("click", () => {
+    clearCanvas();
+    lines = [];
+  });
 }
