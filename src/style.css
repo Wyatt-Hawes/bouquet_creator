@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #252525;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -78,4 +78,10 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+canvas {
+  border-radius: 10px;
+  filter: drop-shadow(0px 15px 25px #0d0c0d);
+  outline: rgb(0, 0, 0) 2px solid;
 }
