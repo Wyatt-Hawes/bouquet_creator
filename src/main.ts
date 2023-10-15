@@ -1,15 +1,18 @@
 import "./style.css";
 
+import { Line } from "./classes";
+
 const drawingChanged = new CustomEvent("drawing-changed");
 type ClickHandler = () => void;
 
 const app: HTMLDivElement = document.querySelector("#app")!;
 const gameName = "Wyatt's Sticker Sketchpad";
 const header = document.createElement("h1");
-let lines: { x: number; y: number }[][] = [];
-let currentLine: { x: number; y: number }[] | null = [];
-let redoLines: { x: number; y: number }[][] = [];
+let lines: Line[] = [];
+let currentLine: Line | null = new Line();
+let redoLines: Line[] = [];
 
+//Set page title
 document.title = gameName;
 header.innerHTML = gameName;
 app.append(header);
@@ -26,9 +29,17 @@ const ctx = canvas.getContext("2d")!;
 ctx.fillStyle = "white";
 ctx.fillRect(0, 0, 256, 256);
 
+//Create cursor object
 const cursor = { active: false, x: 0, y: 0 };
+
+//Add mousedown, mousemove, and mouseup events to the canvas
 addCanvasEvents();
 
+//Add thickness Slider
+app.append(document.createElement("br"));
+const thickSlider = addThicknessSlider();
+
+//Add buttons
 app.append(document.createElement("br"));
 addButton("undo", undoCanvas);
 addButton("redo", redoCanvas);
@@ -44,10 +55,10 @@ function addCanvasEvents() {
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
 
-    currentLine = [];
+    currentLine = new Line(thickSlider.value);
     lines.push(currentLine);
-    //redoLines.splice(0, redoLines.length);
-    currentLine.push({ x: cursor.x, y: cursor.y });
+    redoLines.splice(0, redoLines.length);
+    currentLine.drag(cursor.x, cursor.y);
 
     canvas.dispatchEvent(drawingChanged);
   });
@@ -58,7 +69,7 @@ function addCanvasEvents() {
     }
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
-    currentLine!.push({ x: cursor.x, y: cursor.y });
+    currentLine!.drag(cursor.x, cursor.y);
     redoLines = [];
 
     canvas.dispatchEvent(drawingChanged);
@@ -76,16 +87,8 @@ function addCanvasEvents() {
 
 function redraw() {
   clearCanvas();
-  for (const line of lines) {
-    if (line.length > 1) {
-      ctx.beginPath();
-      const { x, y } = line[0];
-      ctx.moveTo(x, y);
-      for (const { x, y } of line) {
-        ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
+  for (const l of lines) {
+    l.display(ctx);
   }
 }
 
@@ -118,14 +121,37 @@ function redoCanvas() {
   canvas.dispatchEvent(drawingChanged);
 }
 
-function addButton(name: string, func: ClickHandler) {
-  //Add clear button
+function addButton(text: string, func: ClickHandler) {
+  //Add Button to page
   const button = document.createElement("button");
-  button.innerHTML = name;
+  button.innerHTML = text;
   app.append(button);
 
   //Add click functionality
   button.addEventListener("click", () => {
     func();
   });
+}
+
+function addThicknessSlider() {
+  const thickness = document.createElement("input");
+  thickness.type = "range";
+  thickness.min = "1";
+  thickness.max = "11";
+  thickness.value = "1";
+
+  thickness.addEventListener("input", () => {
+    changeThickness(parseInt(thickness.value));
+  });
+
+  const label = document.createElement("label");
+  label.textContent = "Thickness: ";
+
+  app.append(label);
+  app.append(thickness);
+  return thickness;
+}
+
+function changeThickness(val: number) {
+  ctx.lineWidth = val;
 }
