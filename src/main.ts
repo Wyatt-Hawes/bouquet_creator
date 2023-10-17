@@ -1,16 +1,22 @@
 import "./style.css";
 
-import { Line } from "./classes";
+import { Line, CursorCommand } from "./classes";
 
 const drawingChanged = new CustomEvent("drawing-changed");
+const cursorChanged = new CustomEvent("cursor-changed");
 type ClickHandler = () => void;
 
+//Header elements
 const app: HTMLDivElement = document.querySelector("#app")!;
 const gameName = "Wyatt's Sticker Sketchpad";
 const header = document.createElement("h1");
+
+//Variable setup
 let lines: Line[] = [];
 let currentLine: Line | null = new Line();
 let redoLines: Line[] = [];
+
+let cursorCommand: CursorCommand | null = null;
 
 //Set page title
 document.title = gameName;
@@ -22,6 +28,7 @@ const canvas = document.createElement("canvas");
 canvas.id = "canvas";
 canvas.width = 256;
 canvas.height = 256;
+canvas.style.cursor = "none";
 app.append(canvas);
 
 //Get context
@@ -50,6 +57,7 @@ addButton("clear", eraseCanvas);
 //-----------------------
 
 function addCanvasEvents() {
+  //Mouse Events
   canvas.addEventListener("mousedown", (e) => {
     cursor.active = true;
     cursor.x = e.offsetX;
@@ -64,15 +72,14 @@ function addCanvasEvents() {
   });
 
   canvas.addEventListener("mousemove", (e) => {
-    if (!cursor.active) {
-      return;
-    }
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
-    currentLine!.drag(cursor.x, cursor.y);
-    redoLines = [];
+    if (cursor.active) {
+      cursor.x = e.offsetX;
+      cursor.y = e.offsetY;
+      currentLine!.drag(cursor.x, cursor.y);
+      redoLines = [];
 
-    canvas.dispatchEvent(drawingChanged);
+      canvas.dispatchEvent(drawingChanged);
+    }
   });
 
   canvas.addEventListener("mouseup", () => {
@@ -80,16 +87,42 @@ function addCanvasEvents() {
     currentLine = null;
   });
 
+  //Drawing events
   canvas.addEventListener("drawing-changed", () => {
     redraw();
+  });
+  canvas.addEventListener("cursor-changed", () => {
+    redraw();
+  });
+
+  //Cursor events
+  canvas.addEventListener("mouseout", () => {
+    cursorCommand = null;
+    canvas.dispatchEvent(cursorChanged);
+  });
+
+  canvas.addEventListener("mouseenter", (e) => {
+    cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
+    canvas.dispatchEvent(cursorChanged);
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
+    canvas.dispatchEvent(cursorChanged);
   });
 }
 
 function redraw() {
   clearCanvas();
-  for (const l of lines) {
-    l.display(ctx);
+  const lineWidthBefore = ctx.lineWidth;
+  if (cursorCommand) {
+    cursorCommand.display(ctx);
   }
+
+  lines.forEach((l) => {
+    l.display(ctx);
+  });
+  ctx.lineWidth = lineWidthBefore;
 }
 
 function clearCanvas() {
@@ -154,4 +187,5 @@ function addThicknessSlider() {
 
 function changeThickness(val: number) {
   ctx.lineWidth = val;
+  redraw();
 }
