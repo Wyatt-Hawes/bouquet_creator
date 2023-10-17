@@ -20,6 +20,7 @@ export class Line {
     if (this.coords.length == 0) {
       return;
     }
+    const lineWidthBefore = ctx.lineWidth;
     ctx.lineWidth = parseInt(this.thickness);
     const first = this.coords[0];
 
@@ -31,33 +32,80 @@ export class Line {
     }
 
     ctx.stroke();
+    ctx.lineWidth = lineWidthBefore;
+  }
+}
+
+export class Sticker {
+  coord: Coordinate;
+  text: string;
+  size: number;
+  xOffset: number;
+  yOffset: number;
+
+  constructor(x: number, y: number, text: string, size: string) {
+    this.coord = { x: x, y: y };
+    this.text = text;
+
+    const outMin = 16;
+    const outMax = 64;
+    const inMin = 1;
+    const inMax = 11;
+    const newSize: number =
+      ((parseInt(size) - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+    this.xOffset = (4 * newSize) / outMin;
+    this.yOffset = (8 * newSize) / outMin;
+    this.size = newSize;
+  }
+
+  drag(x: number, y: number) {
+    this.coord = { x: x, y: y };
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    const fontBefore: string = ctx.font;
+
+    ctx.font = this.size + "px monospace";
+    ctx.fillText(
+      this.text,
+      this.coord.x - this.xOffset,
+      this.coord.y + this.yOffset
+    );
+
+    ctx.font = fontBefore;
   }
 }
 
 export class CursorCommand {
   x: number;
   y: number;
+  text: string;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, text: string) {
     this.x = x;
     this.y = y;
+    this.text = text;
   }
 
   display(ctx: CanvasRenderingContext2D) {
     //16-64 from 1-11
+    const lineWidthBefore = ctx.lineWidth;
     const outMin = 16;
     const outMax = 64;
     const inMin = 1;
     const inMax = 11;
     const newSize: number =
-      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
       ((ctx.lineWidth - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
     const xOffset = (4 * newSize) / outMin;
     const yOffset = (8 * newSize) / outMin;
+    const fontBefore = ctx.font;
 
     ctx.font = newSize + "px monospace";
     ctx.fillStyle = "black";
 
-    ctx.fillText("*", this.x - xOffset, this.y + yOffset);
+    ctx.fillText(this.text, this.x - xOffset, this.y + yOffset);
+    ctx.lineWidth = lineWidthBefore;
+
+    ctx.font = fontBefore;
   }
 }

@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { Line, CursorCommand } from "./classes";
+import { Line, CursorCommand, Sticker } from "./classes";
 
 const drawingChanged = new CustomEvent("drawing-changed");
 const cursorChanged = new CustomEvent("cursor-changed");
@@ -12,9 +12,10 @@ const gameName = "Wyatt's Sticker Sketchpad";
 const header = document.createElement("h1");
 
 //Variable setup
-let lines: Line[] = [];
-let currentLine: Line | null = new Line();
-let redoLines: Line[] = [];
+let strokes: (Line | Sticker)[] = [];
+let currentStroke: (Line | Sticker) | null = null;
+let redoStrokes: (Line | Sticker)[] = [];
+let currentCursor = "*";
 
 let cursorCommand: CursorCommand | null = null;
 
@@ -52,6 +53,13 @@ addButton("undo", undoCanvas);
 addButton("redo", redoCanvas);
 addButton("clear", eraseCanvas);
 
+//Add Emoji Buttons
+const emojis = ["👻", "👽", "🥭", "clear emoji"];
+app.append(document.createElement("br"));
+emojis.forEach((text) => {
+  addEmojiButton(text);
+});
+
 //-----------------------
 //-----FUNCTIONS-------//
 //-----------------------
@@ -62,11 +70,21 @@ function addCanvasEvents() {
     cursor.active = true;
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
+    if (currentCursor == "*") {
+      currentStroke = new Line(thickSlider.value);
+    } else {
+      currentStroke = new Sticker(
+        cursor.x,
+        cursor.y,
+        currentCursor,
+        thickSlider.value
+      );
+    }
 
-    currentLine = new Line(thickSlider.value);
-    lines.push(currentLine);
-    redoLines.splice(0, redoLines.length);
-    currentLine.drag(cursor.x, cursor.y);
+    strokes.push(currentStroke);
+    redoStrokes.splice(0, redoStrokes.length);
+
+    currentStroke.drag(cursor.x, cursor.y);
 
     canvas.dispatchEvent(drawingChanged);
   });
@@ -75,8 +93,8 @@ function addCanvasEvents() {
     if (cursor.active) {
       cursor.x = e.offsetX;
       cursor.y = e.offsetY;
-      currentLine!.drag(cursor.x, cursor.y);
-      redoLines = [];
+      currentStroke!.drag(cursor.x, cursor.y);
+      redoStrokes = [];
 
       canvas.dispatchEvent(drawingChanged);
     }
@@ -84,7 +102,7 @@ function addCanvasEvents() {
 
   canvas.addEventListener("mouseup", () => {
     cursor.active = false;
-    currentLine = null;
+    currentStroke = null;
   });
 
   //Drawing events
@@ -102,12 +120,12 @@ function addCanvasEvents() {
   });
 
   canvas.addEventListener("mouseenter", (e) => {
-    cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
+    cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentCursor);
     canvas.dispatchEvent(cursorChanged);
   });
 
   canvas.addEventListener("mousemove", (e) => {
-    cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
+    cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentCursor);
     canvas.dispatchEvent(cursorChanged);
   });
 }
@@ -115,14 +133,14 @@ function addCanvasEvents() {
 function redraw() {
   clearCanvas();
   const lineWidthBefore = ctx.lineWidth;
-  if (cursorCommand) {
-    cursorCommand.display(ctx);
-  }
 
-  lines.forEach((l) => {
+  strokes.forEach((l) => {
     l.display(ctx);
   });
   ctx.lineWidth = lineWidthBefore;
+  if (cursorCommand) {
+    cursorCommand.display(ctx);
+  }
 }
 
 function clearCanvas() {
@@ -132,25 +150,25 @@ function clearCanvas() {
 }
 
 function eraseCanvas() {
-  redoLines = lines;
-  lines = [];
+  redoStrokes = strokes;
+  strokes = [];
 
   clearCanvas();
 }
 
 function undoCanvas() {
-  if (lines.length == 0) {
+  if (strokes.length == 0) {
     return;
   }
-  redoLines.push(lines.pop()!);
+  redoStrokes.push(strokes.pop()!);
   canvas.dispatchEvent(drawingChanged);
 }
 
 function redoCanvas() {
-  if (redoLines.length == 0) {
+  if (redoStrokes.length == 0) {
     return;
   }
-  lines.push(redoLines.pop()!);
+  strokes.push(redoStrokes.pop()!);
   canvas.dispatchEvent(drawingChanged);
 }
 
@@ -163,6 +181,20 @@ function addButton(text: string, func: ClickHandler) {
   //Add click functionality
   button.addEventListener("click", () => {
     func();
+  });
+}
+
+function addEmojiButton(text: string) {
+  const button = document.createElement("button");
+  button.innerHTML = text;
+  app.append(button);
+
+  button.addEventListener("click", () => {
+    currentCursor = text;
+    if (text == "clear emoji") {
+      currentCursor = "*";
+    }
+    canvas.dispatchEvent(cursorChanged);
   });
 }
 
