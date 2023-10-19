@@ -5,6 +5,7 @@ import { Line, CursorCommand, Sticker } from "./classes";
 const drawingChanged = new CustomEvent("drawing-changed");
 const cursorChanged = new CustomEvent("cursor-changed");
 type ClickHandler = () => void;
+type SliderHandler = (num: number) => void;
 
 //Header elements
 const app: HTMLDivElement = document.querySelector("#app")!;
@@ -18,6 +19,7 @@ let redoStrokes: (Line | Sticker)[] = [];
 let currentCursor = "*";
 
 let cursorCommand: CursorCommand | null = null;
+let newColor = "#000000";
 
 //Set page title
 document.title = gameName;
@@ -48,8 +50,16 @@ const cursor = { active: false, x: 0, y: 0 };
 addCanvasEvents();
 
 //Add thickness Slider
-app.append(document.createElement("br"));
-const thickSlider = addThicknessSlider();
+addLineBreak();
+const thickSlider = addSlider("Thickness", "1", "11", "1", changeThickness);
+addLineBreak();
+const colorSlider = addSlider(
+  "Color",
+  "0",
+  0xffffff + "",
+  0x000000 + "",
+  changeColor
+);
 
 //Add buttons
 addLineBreak();
@@ -79,13 +89,14 @@ function addCanvasEvents() {
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
     if (currentCursor == "*") {
-      currentStroke = new Line(thickSlider.value);
+      currentStroke = new Line(thickSlider.value, newColor);
     } else {
       currentStroke = new Sticker(
         cursor.x,
         cursor.y,
         currentCursor,
-        thickSlider.value
+        thickSlider.value,
+        newColor
       );
     }
 
@@ -128,12 +139,22 @@ function addCanvasEvents() {
   });
 
   canvas.addEventListener("mouseenter", (e) => {
-    cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentCursor);
+    cursorCommand = new CursorCommand(
+      e.offsetX,
+      e.offsetY,
+      currentCursor,
+      newColor
+    );
     canvas.dispatchEvent(cursorChanged);
   });
 
   canvas.addEventListener("mousemove", (e) => {
-    cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentCursor);
+    cursorCommand = new CursorCommand(
+      e.offsetX,
+      e.offsetY,
+      currentCursor,
+      colorSlider.value
+    );
     canvas.dispatchEvent(cursorChanged);
   });
 }
@@ -214,27 +235,39 @@ function addCustomEmoji() {
   addEmojiButton(customEmoji);
 }
 
-function addThicknessSlider() {
-  const thickness = document.createElement("input");
-  thickness.type = "range";
-  thickness.min = "1";
-  thickness.max = "11";
-  thickness.value = "1";
+function addSlider(
+  name: string,
+  min: string,
+  max: string,
+  initial: string,
+  func: SliderHandler
+) {
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.min = min;
+  slider.max = max;
+  slider.value = initial;
 
-  thickness.addEventListener("input", () => {
-    changeThickness(parseInt(thickness.value));
+  slider.addEventListener("input", () => {
+    func(parseInt(slider.value));
   });
 
   const label = document.createElement("label");
-  label.textContent = "Thickness: ";
+  label.textContent = name + ": ";
 
   app.append(label);
-  app.append(thickness);
-  return thickness;
+  app.append(slider);
+  return slider;
 }
 
 function changeThickness(val: number) {
   ctx.lineWidth = val;
+  redraw();
+}
+
+function changeColor(val: number) {
+  newColor = "#" + val.toString(16).padStart(6, "0");
+  ctx.fillStyle = newColor;
   redraw();
 }
 
