@@ -24,6 +24,10 @@ document.title = gameName;
 header.innerHTML = gameName;
 app.append(header);
 
+//Add export button
+addButton("Export", exportPicture);
+addLineBreak();
+
 //Create canvas
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
@@ -48,17 +52,21 @@ app.append(document.createElement("br"));
 const thickSlider = addThicknessSlider();
 
 //Add buttons
-app.append(document.createElement("br"));
+addLineBreak();
 addButton("undo", undoCanvas);
 addButton("redo", redoCanvas);
 addButton("clear", eraseCanvas);
 
 //Add Emoji Buttons
 const emojis = ["👻", "👽", "🥭", "clear emoji"];
-app.append(document.createElement("br"));
+addLineBreak();
 emojis.forEach((text) => {
   addEmojiButton(text);
 });
+
+//Add another break for user-inputted buttons
+addLineBreak();
+addButton("Custom", addCustomEmoji);
 
 //-----------------------
 //-----FUNCTIONS-------//
@@ -198,6 +206,14 @@ function addEmojiButton(text: string) {
   });
 }
 
+function addCustomEmoji() {
+  const customEmoji = prompt("Enter your emoji!", "🥥");
+  if (!customEmoji) {
+    return;
+  }
+  addEmojiButton(customEmoji);
+}
+
 function addThicknessSlider() {
   const thickness = document.createElement("input");
   thickness.type = "range";
@@ -220,4 +236,29 @@ function addThicknessSlider() {
 function changeThickness(val: number) {
   ctx.lineWidth = val;
   redraw();
+}
+
+function addLineBreak() {
+  app.append(document.createElement("br"));
+}
+
+function exportPicture() {
+  const hdCanvas = document.createElement("canvas");
+  hdCanvas.width = canvas.width * 4;
+  hdCanvas.height = canvas.height * 4;
+
+  const hdCtx = hdCanvas.getContext("2d")!;
+  hdCtx.fillStyle = "white";
+
+  hdCtx.scale(4, 4);
+  hdCtx.fillRect(0, 0, 256, 256);
+
+  strokes.forEach((stroke) => {
+    stroke.display(hdCtx);
+  });
+
+  const anchor = document.createElement("a");
+  anchor.href = hdCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
 }
