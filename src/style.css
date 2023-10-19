@@ -84,7 +84,7 @@ button:focus-visible {
 canvas {
   border-radius: 10px;
   filter: drop-shadow(0px 15px 25px #000000);
-  outline: rgb(0, 0, 0) 2px solid;
+  outline: rgb(74, 74, 74) 2px solid;
   position: relative;
   z-index: 1;
 }
