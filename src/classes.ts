@@ -24,11 +24,10 @@ export class Line {
     }
     const lineWidthBefore = ctx.lineWidth;
     const colorBefore = ctx.strokeStyle;
-    ctx.lineWidth = parseInt(this.thickness);
-    ctx.strokeStyle = this.color;
-
     const first = this.coords[0];
 
+    ctx.lineWidth = parseInt(this.thickness);
+    ctx.strokeStyle = this.color;
     ctx.beginPath();
     ctx.moveTo(first.x, first.y);
 
@@ -37,6 +36,8 @@ export class Line {
     }
 
     ctx.stroke();
+
+    //Undo style changes so it doesnt carry to other strokes
     ctx.lineWidth = lineWidthBefore;
     ctx.strokeStyle = colorBefore;
   }
@@ -55,6 +56,7 @@ export class Sticker {
     this.text = text;
     this.color = color;
 
+    //Turning the stroke sizes of 1-11 to correspond to font sizes 16-64
     const outMin = 16;
     const outMax = 64;
     const inMin = 1;
@@ -103,7 +105,7 @@ export class CursorCommand {
   }
 
   display(ctx: CanvasRenderingContext2D) {
-    //16-64 from 1-11
+    //Turning the stroke sizes of 1-11 to correspond to font sizes 16-64
     const lineWidthBefore = ctx.lineWidth;
     const outMin = 16;
     const outMax = 64;
@@ -117,7 +119,6 @@ export class CursorCommand {
 
     ctx.font = newSize + "px monospace";
     ctx.fillStyle = "black";
-    //ctx.fillStyle = this.color;
 
     ctx.fillText(this.text, this.x - xOffset, this.y + yOffset);
     ctx.lineWidth = lineWidthBefore;

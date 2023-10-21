@@ -16,7 +16,7 @@ const header = document.createElement("h1");
 let strokes: (Line | Sticker)[] = [];
 let currentStroke: (Line | Sticker) | null = null;
 let redoStrokes: (Line | Sticker)[] = [];
-let currentCursor = "*";
+let currentCursorSymbol = "*";
 
 let cursorCommand: CursorCommand | null = null;
 let newColor = "#000000";
@@ -68,7 +68,7 @@ addButton("redo", redoCanvas);
 addButton("clear", eraseCanvas);
 
 //Add Emoji Buttons
-const emojis = ["👻", "👽", "🥭", "clear emoji"];
+const emojis = ["👻", "👽", "🥭", "reset cursor"];
 addLineBreak();
 emojis.forEach((text) => {
   addEmojiButton(text);
@@ -88,13 +88,13 @@ function addCanvasEvents() {
     cursor.active = true;
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
-    if (currentCursor == "*") {
+    if (currentCursorSymbol == "*") {
       currentStroke = new Line(thickSlider.value, newColor);
     } else {
       currentStroke = new Sticker(
         cursor.x,
         cursor.y,
-        currentCursor,
+        currentCursorSymbol,
         thickSlider.value,
         newColor
       );
@@ -142,7 +142,7 @@ function addCanvasEvents() {
     cursorCommand = new CursorCommand(
       e.offsetX,
       e.offsetY,
-      currentCursor,
+      currentCursorSymbol,
       newColor
     );
     canvas.dispatchEvent(cursorChanged);
@@ -152,7 +152,7 @@ function addCanvasEvents() {
     cursorCommand = new CursorCommand(
       e.offsetX,
       e.offsetY,
-      currentCursor,
+      currentCursorSymbol,
       colorSlider.value
     );
     canvas.dispatchEvent(cursorChanged);
@@ -219,9 +219,9 @@ function addEmojiButton(text: string) {
   app.append(button);
 
   button.addEventListener("click", () => {
-    currentCursor = text;
-    if (text == "clear emoji") {
-      currentCursor = "*";
+    currentCursorSymbol = text;
+    if (text == "reset cursor") {
+      currentCursorSymbol = "*";
     }
     canvas.dispatchEvent(cursorChanged);
   });
