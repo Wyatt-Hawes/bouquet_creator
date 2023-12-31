@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-magic-numbers */
 interface Coordinate {
   x: number;
   y: number;
@@ -47,25 +48,28 @@ export class Sticker {
   coord: Coordinate;
   text: string;
   size: number;
-  xOffset: number;
-  yOffset: number;
   color: string;
+  img: HTMLImageElement;
+  rotation: number;
 
-  constructor(x: number, y: number, text: string, size: string, color: string) {
+  constructor(
+    x: number,
+    y: number,
+    text: string,
+    size: string,
+    color: string,
+    rotation: number
+  ) {
     this.coord = { x: x, y: y };
     this.text = text;
     this.color = color;
 
     //Turning the stroke sizes of 1-11 to correspond to font sizes 16-64
-    const outMin = 16;
-    const outMax = 64;
-    const inMin = 1;
-    const inMax = 11;
-    const newSize: number =
-      ((parseInt(size) - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
-    this.xOffset = (4 * newSize) / outMin;
-    this.yOffset = (8 * newSize) / outMin;
+    const newSize: number = getImageSizeRatio(parseFloat(size));
     this.size = newSize;
+    this.img = new Image();
+    this.img.src = this.text;
+    this.rotation = rotation;
   }
 
   drag(x: number, y: number) {
@@ -75,17 +79,22 @@ export class Sticker {
   display(ctx: CanvasRenderingContext2D) {
     const fontBefore: string = ctx.font;
     const colorBefore = ctx.fillStyle;
+    const xOffset = (-30 / 2) * this.size;
+    const yOffset = (-60 / 2) * this.size;
 
     ctx.font = this.size + "px monospace";
     ctx.fillStyle = this.color;
+    ctx.save();
 
-    ctx.fillText(
-      this.text,
-      this.coord.x - this.xOffset,
-      this.coord.y + this.yOffset
-    );
+    // Translate to the center of the image
+    ctx.translate(this.coord.x, this.coord.y);
+    // Rotate the image
+    ctx.rotate(this.rotation);
+    // Draw the image with adjusted offset
+    ctx.drawImage(this.img, xOffset, yOffset, 30 * this.size, 60 * this.size);
 
     //Undo context changes
+    ctx.restore();
     ctx.fillStyle = colorBefore;
     ctx.font = fontBefore;
   }
@@ -96,12 +105,23 @@ export class CursorCommand {
   y: number;
   text: string;
   color: string;
+  rotation: number;
+  size: number;
 
-  constructor(x: number, y: number, text: string, color: string) {
+  constructor(
+    x: number,
+    y: number,
+    text: string,
+    color: string,
+    rotation: number,
+    size: number
+  ) {
     this.x = x;
     this.y = y;
     this.text = text;
     this.color = color;
+    this.rotation = rotation;
+    this.size = size;
   }
 
   display(ctx: CanvasRenderingContext2D) {
@@ -120,9 +140,42 @@ export class CursorCommand {
     ctx.font = newSize + "px monospace";
     ctx.fillStyle = "black";
 
-    ctx.fillText(this.text, this.x - xOffset, this.y + yOffset);
+    if (this.text == "*") {
+      ctx.fillText(this.text, this.x - xOffset, this.y + yOffset);
+    } else {
+      const img = new Image();
+      img.src = this.text;
+      ctx.save();
+
+      // Translate to the center of the image
+      ctx.translate(this.x, this.y);
+
+      // Rotate the image
+      ctx.rotate(this.rotation);
+
+      // Draw the image with adjusted offset
+
+      const r = getImageSizeRatio(this.size);
+      const xOffset = (-30 / 2) * r; // Half of the image width
+      const yOffset = (-60 / 2) * r; // Half of the image height
+      console.log("Cur:", r);
+      ctx.drawImage(img, xOffset, yOffset, 30 * r, 60 * r);
+
+      ctx.restore();
+    }
     ctx.lineWidth = lineWidthBefore;
 
     ctx.font = fontBefore;
   }
+}
+
+function getImageSizeRatio(size: number) {
+  const outMin = 1;
+  const outMax = 3;
+  const inMin = 1;
+  const inMax = 11;
+  const newSize: number =
+    ((size - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+
+  return newSize;
 }
