@@ -64,7 +64,7 @@ export class Sticker {
     this.text = text;
     this.color = color;
 
-    //Turning the stroke sizes of 1-11 to correspond to font sizes 16-64
+    //Turning the stroke sizes of 1-11 to correspond to image scale of 1-3
     const newSize: number = getImageSizeRatio(parseFloat(size));
     this.size = newSize;
     this.img = new Image();
@@ -145,6 +145,11 @@ export class CursorCommand {
     } else {
       const img = new Image();
       img.src = this.text;
+      const r = getImageSizeRatio(this.size);
+      const xOffset = (-30 / 2) * r; // Half of the image width
+      const yOffset = (-60 / 2) * r; // Half of the image height
+
+      //Save orientation of the canvas
       ctx.save();
 
       // Translate to the center of the image
@@ -154,21 +159,19 @@ export class CursorCommand {
       ctx.rotate(this.rotation);
 
       // Draw the image with adjusted offset
-
-      const r = getImageSizeRatio(this.size);
-      const xOffset = (-30 / 2) * r; // Half of the image width
-      const yOffset = (-60 / 2) * r; // Half of the image height
-      console.log("Cur:", r);
       ctx.drawImage(img, xOffset, yOffset, 30 * r, 60 * r);
 
+      //Restore image
       ctx.restore();
     }
-    ctx.lineWidth = lineWidthBefore;
 
+    //Undo style changes so it doesnt carry to other strokes
+    ctx.lineWidth = lineWidthBefore;
     ctx.font = fontBefore;
   }
 }
 
+//Scale font size of 1-11 to a more manageable 1-3
 function getImageSizeRatio(size: number) {
   const outMin = 1;
   const outMax = 3;

@@ -69,17 +69,18 @@ addCanvasEvents();
 
 //add color picker
 addLineBreak();
-const colorSlider = addColorSlider(
+const colorSlider = addSlider(
   "Pen Color",
   "0",
   0xffffff + "",
   0x000000 + "",
+  "color",
   changeColor
 );
 
 //Add Size Slider
 addLineBreak();
-addSlider("Size", "1", "11", "1", changeThickness);
+addSlider("Size", "1", "11", "1", "range", changeThickness);
 
 //Add rotation slider
 addLineBreak();
@@ -88,6 +89,7 @@ const rotationSlider = addSlider(
   -2 * Math.PI + "",
   2 * Math.PI + "",
   0 + "",
+  "range",
   changeRotation
 );
 rotationSlider.step = 0.1 + "";
@@ -243,8 +245,8 @@ function addCanvasEvents() {
 
 function redraw() {
   const lineWidthBefore = ctx.lineWidth;
-
   clearCanvas();
+
   strokes.forEach((l) => {
     l.display(ctx);
   });
@@ -304,72 +306,49 @@ function resetCursor() {
 
 function addFlowerButton(path: string) {
   const button = document.createElement("button");
-
   const img = document.createElement("img");
+
   img.src = path;
   img.alt = "Flower";
   img.width = 30;
   img.height = 60;
 
   button.appendChild(img);
-
   app.append(button);
+
   button.addEventListener("click", () => {
     currentCursorSymbol = path;
     canvas.dispatchEvent(cursorChanged);
   });
 }
 
-// Functionality for adding custom stickers, maybe i want to implement this later
-// function addCustomEmoji() {
-//   const customEmoji = prompt("Enter your emoji!", "🥥");
-//   if (!customEmoji) {
-//     return;
-//   }
-//   addFlowerButton(customEmoji);
-// }
+/*
+Functionality for adding custom stickers, maybe i want to implement this later
+function addCustomEmoji() {
+  const customEmoji = prompt("Enter your emoji!", "🥥");
+  if (!customEmoji) {
+    return;
+  }
+  addFlowerButton(customEmoji);
+}
+*/
 
 function addSlider(
   name: string,
   min: string,
   max: string,
   initial: string,
+  type: string,
   func: SliderHandler
 ) {
   const slider = document.createElement("input");
-  slider.type = "range";
+  slider.type = type;
   slider.min = min;
   slider.max = max;
   slider.value = initial;
 
   slider.addEventListener("input", () => {
     func(parseFloat(slider.value));
-  });
-
-  const label = document.createElement("label");
-  label.textContent = name + ": ";
-
-  app.append(label);
-  app.append(slider);
-  return slider;
-}
-
-//Same as addSlider but changes type, yea i know this sucks
-function addColorSlider(
-  name: string,
-  min: string,
-  max: string,
-  initial: string,
-  func: SliderHandler
-) {
-  const slider = document.createElement("input");
-  slider.type = "color";
-  slider.min = min;
-  slider.max = max;
-  slider.value = initial;
-
-  slider.addEventListener("input", () => {
-    func(slider.value);
   });
 
   const label = document.createElement("label");
@@ -392,7 +371,6 @@ function changeThickness(val: number | string) {
 
 function changeRotation(_val: number | string) {
   currentRotation = parseFloat(rotationSlider.value);
-  console.log(rotationSlider.value);
 }
 
 function changeColor(val: string | number) {
